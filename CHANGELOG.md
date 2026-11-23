@@ -2,6 +2,16 @@
 
 All notable changes to **dsh-remote**.
 
+## 1.4.1 — 2026-11-23
+### SFTP 契约：写操作成功返回 true；连接失败带结构化错误码
+
+面向 deck 适配层（dsh-deck-remote-exec）在远端工作区开票验收时暴露的两个契约缺口。两处都是**只增不改**，既有消费者行为不变。
+
+- **修复（#1）**：`buildSftpSurface` 的写类方法（`mkdir` / `rmdir` / `unlink` / `rename` / `renameOverwrite` / `setstat` / `writeFile` / `createFileExclusive`）成功时显式返回 `true`。此前 ssh2 的回调只给 `err`，成功值落在 `undefined`，而 dsh-deck-remote-exec 的 fs 代理按「非 null 非 undefined」判成功，于是**每一次成功的远端写入都被误报成 `returned-null`**（`RDE_REMOTE_WRITE_FAILED`）。成功的定义属于这个能力出口自身，因此契约定在这里，上层只透传。失败仍 reject，读方法返回值原样。
+- **增强（#2）**：`SystemOpenSshPool.sftp()` 的失败路径带结构化 `code`，让上层能在日志里区分「SFTP 没连上」和「连上了但写失败」：`SFTP_TIMEOUT`（握手超时）、`SFTP_HANDSHAKE_FAILED`（通道 error）、`SFTP_SPAWN_FAILED`（ssh 子进程起不来）、`SFTP_CHANNEL_CLOSED`（通道非零退出）、`SFTP_TARGET_CHANGED`（握手期间目标被换）。resolve/reject 语义不变，没有改成返回 null。
+- **发版注意**：宿主 profile 的 `package.json` 若仍声明旧版本号，升级时需同步改声明号，否则下次 install 会按声明降级。
+- 已验证：`test/sftp-surface-write-sentinel.test.js` 与 `test/sftp-error-codes.test.js` 共 6 条用例通过；真机对远端写入实测 `writeFile`/`mkdir` 返回 `true`、内容读回一致。
+
 ## 1.4.0 — 2026-11-23
 ### 工作区文件直读远端与连接修复
 
@@ -666,7 +676,8 @@ vs「没在 <文件> 里找到主机」。
   「在这台机器上打开这个目录」（走 /mirror，会建/复用镜像并把选择记在那台机器上）。之前是**一张卡片只显示当前机器**的
   最近工作区 —— 多机时会描述一台跟你正在看的行不同的机器。
 - **页面自动感知外部变化**：设置页每 5 秒轻量轮询一次注册表（本地 JSON 读取），并在窗口重新聚焦时刷新一次（含重读
-  ~/.ssh/config）。所以 agent 调 w_connect 换机器、或另一个标签页切机器，这边不用手动刷新就会跟上。
+  ~/.ssh/config）。所以 agent 调 
+w_connect 换机器、或另一个标签页切机器，这边不用手动刷新就会跟上。
 - 顺带修一个自己引入的问题：成功/错误提示原来只渲染在**手动表单内部**，而表单现在默认折叠 —— 列表里点「打开」「连接」的
   反馈会看不见。现在提示在面板级始终可见。
 
