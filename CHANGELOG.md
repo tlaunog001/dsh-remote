@@ -2,6 +2,20 @@
 
 All notable changes to **dsh-remote**.
 
+## 1.4.3 — 2026-11-23
+### 修正客户端模块的注册 id（scope 化后必须用完整包名）
+
+- **修复**：`lib/client.js` 顶部的 `window.__ModuleLoader__.load({ id })` 由 `'dsh-remote'` 改为 `'@tanker001/dsh-remote'`。宿主按**包名**去找这份 client 模块并核对注册 id，两者不一致时报
+  `client-modules: could not load "@tanker001/dsh-remote": ... loaded without registering "@tanker001/dsh-remote" via __ModuleLoader__.load`，前端整个插件加载失败。同仓其他 scope 包（`@dougen/dsh-deepseek-usage`、`@mengyuly/dsh-ponytail`）的注册 id 同样写完整包名。
+- 注意：`slots.register({ id: 'dsh-remote' })` 那几处是 **UI 槽位标识**，属插件内部身份，不随包名变化，未改动。
+- 版本 1.4.2 → 1.4.3，`CLIENT_VERSION` 同步。
+
+## 1.4.2 — 2026-11-23
+### 修正 bundle patch 的模块名（scope 化后必须用完整包名）
+
+- **修复**：`cordis.patch.yml` 的 `name` 由 `'dsh-remote'` 改为 `'@tanker001/dsh-remote'`。包名 scope 化后，DSH 按 patch 的 `name` 解析模块，旧值会 `MODULE_NOT_FOUND`、插件整体加载失败。同仓其他 scope 包（`@dougen/dsh-deepseek-usage`、`@mengyuly/dsh-ponytail`）的 patch 同样写完整包名，本改动与之一致。`id` 保持 `dsh-remote` 不变，插件身份不受影响。
+- 版本 1.4.1 → 1.4.2，`CLIENT_VERSION` 同步。
+
 ## 1.4.1 — 2026-11-23
 ### SFTP 契约：写操作成功返回 true；连接失败带结构化错误码
 

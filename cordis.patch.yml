@@ -6,4 +6,4 @@
 # remote explorer/editor tabs when it is present.
 - insert:
     - id: dsh-remote
-      name: 'dsh-remote'
+      name: '@tanker001/dsh-remote'
